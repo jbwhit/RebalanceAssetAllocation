@@ -1,0 +1,8 @@
+CASH    31.08
+AAPL    12	individual
+EEM	    40	Emerging    
+EFA	    45	Foreign     
+IVV	    100	Domestic    
+RWR	    35	RealEstate  
+SHY	    13	BndsShrt
+TIP	    20	USTIPS      

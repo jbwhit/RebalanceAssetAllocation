@@ -1,0 +1,8 @@
+Foreign         15.0
+Domestic        30.0
+RealEstate     15.0
+USTIPS         15.0
+BndsLng         7.5
+Emerging        10.0
+BndsShrt        7.5
+tolerance       3.0
