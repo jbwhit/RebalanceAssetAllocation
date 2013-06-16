@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+import argparse
+import httplib
+import urllib
+import RebalanceAssetAllocation
+from RebalanceAssetAllocation import Portfolio
+
+priority = 0
+
+parser = argparse.ArgumentParser(description='Read commandline input.')
+parser.add_argument('--USER_KEY', action='store', type=str, help="Pushover USER_KEY https://pushover.net/")
+parser.add_argument('--APP_TOKEN', action='store', type=str, help="Pushover APP_TOKEN https://pushover.net/")
+parser.add_argument('--output_option', action='store', type=str, help="None.", default="print")
+parser.add_argument('--message_option', action='store', type=str, help="None.", default="recommend")
+
+args = parser.parse_args()
+
+USER_KEY = args.USER_KEY
+APP_TOKEN = args.APP_TOKEN
+
+example_portfolio = Portfolio()
+example_portfolio.get_ideal_allocation('ideal-allocation.txt')
+example_portfolio.get_account_details(['scottrade-main.txt', 'scottrade-roth.txt'])
+example_portfolio.get_stock_prices()
+example_portfolio.get_core_total()
+example_portfolio.get_current_allocation()
+
+if args.output_option == "push":
+    if args.message_option == 'recommend':
+        example_output, priority = example_portfolio.push_recommendations()
+    if args.message_option == 'summary':
+        example_output = example_portfolio.push_summary()
+        # Send pushover notification with priority
+    conn = httplib.HTTPSConnection("api.pushover.net:443")
+    conn.request("POST", "/1/messages.json",
+      urllib.urlencode({
+        "token": APP_TOKEN,
+        "user": USER_KEY,
+        "message": example_output,
+        "priority": priority, 
+      }), { "Content-type": "application/x-www-form-urlencoded" }) 
+    conn.getresponse()
+
+elif args.output_option == "print":
+    if args.message_option == 'recommend':
+        example_output = example_portfolio.get_recommendations()
+    if args.message_option == 'summary':
+        example_output = example_portfolio.get_summary()    
+    
+
+

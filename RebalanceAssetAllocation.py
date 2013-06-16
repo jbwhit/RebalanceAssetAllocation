@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 from pandas.io.data import get_quote_yahoo
 import locale
-import argparse
 locale.setlocale( locale.LC_ALL, '' )
 
 class Portfolio(object):
@@ -92,12 +91,41 @@ class Portfolio(object):
                 if shares < 0:
                     print "Buy", int(np.abs(shares)), st, asset, round(perc,1)
         pass
+        
+    def push_recommendations(self):
+        """Pushover recommendations."""
+        priority = 0
+        return_string = ""
+        return_string = '\n'.join([return_string, "Recommended actions:", '\n'])
+        for st, perc, asset in sorted(self.current_asset_percentages, key=lambda x: np.abs(x[1]), reverse=True):
+            shares = round(self.core_total * perc / 100. / self.stocks_owned[st]['price'], 0)
+            if np.abs(perc) >= self.tolerance:
+                priority = 1
+                if shares > 0:
+                    return_string = ' '.join([return_string, "Sell:", str(int(np.abs(shares))), str(st), str(asset), str(round(perc,1)), '\n'])
+                if shares < 0:
+                    return_string = ' '.join([return_string, "Buy:",  str(int(np.abs(shares))), str(st), str(asset), str(round(perc,1)), '\n'])
+            else:
+                return_string = ' '.join([return_string, "W/in tol:", ])
+                if shares > 0:
+                    return_string = ' '.join([return_string,  "Sell",  str(int(np.abs(shares))), str(st), str(asset), str(round(perc,1)), '\n'])
+                if shares < 0:
+                    return_string = ' '.join([return_string, "Buy",  str(int(np.abs(shares))), str(st), str(asset), str(round(perc,1)), '\n'])
+        return return_string, priority
     
-    def summary(self):
+    def get_summary(self):
         print "Cash:", locale.currency(self.cash, grouping=True)
-        print "Total:", locale.currency(self.total, grouping=True)
         print "Core Total:", locale.currency(self.core_total, grouping=True)
+        print "Total:", locale.currency(self.total, grouping=True)
         pass
+
+    def push_summary(self):
+        """Pushover summary."""
+        return_string = ""
+        return_string = ''.join([return_string, "Cash: ", locale.currency(self.cash, grouping=True), "\n"])
+        return_string = ''.join([return_string, "Core Total: ", locale.currency(self.core_total, grouping=True), "\n"])
+        return_string = ''.join([return_string, "Total: ", locale.currency(self.total, grouping=True), "\n"])
+        return return_string
     
     def detailed_summary(self):
         for stock in self.stocks_owned:
