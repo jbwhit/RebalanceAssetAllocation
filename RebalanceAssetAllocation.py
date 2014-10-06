@@ -47,6 +47,20 @@ class Portfolio(object):
                             self.stocks_owned[name]['shares'] += float(line.split()[1])
                             self.stocks_owned[name]['assetClass'] = line.split()[2]
                             
+    def parse_account_details(self, webdict):
+        for name in webdict:
+            if name == 'CASH':
+                self.cash += webdict[name]
+            else:
+                if name not in self.stocks_owned:
+                    self.stocks_owned[name] = {}
+                    self.stocks_owned[name]['shares'] = 0.0
+                    self.stocks_owned[name]['shares'] += webdict[name]['shares']
+                    self.stocks_owned[name]['assetClass'] = webdict[name]['assetClass']
+                else:
+                    self.stocks_owned[name]['shares'] += webdict[name]['shares']
+                    self.stocks_owned[name]['assetClass'] = webdict[name]['assetClass']
+                            
     def get_stock_prices(self):
         dataframe = get_quote_yahoo([stock for stock in self.stocks_owned])
         for stock in self.stocks_owned:
@@ -86,9 +100,9 @@ class Portfolio(object):
                     print "Buy:", int(np.abs(shares)), st, asset, round(perc,1)
             else:
                 print "W/in tol:", 
-                if shares > 0:
+                if shares > 0.0:
                     print "Sell", int(np.abs(shares)), st, asset, round(perc,1)
-                if shares < 0:
+                else:
                     print "Buy", int(np.abs(shares)), st, asset, round(perc,1)
         pass
         
@@ -97,7 +111,7 @@ class Portfolio(object):
         priority = 0
         return_string = ""
         return_string = '\n'.join([return_string, "Recommended actions:", '\n'])
-        for st, perc, asset in sorted(self.current_asset_percentages, key=lambda x: np.abs(x[1]), reverse=True):
+        for st, perc, asset in sorted(self.current_asset_percentages, key=lambda x: x[1], reverse=True):
             shares = round(self.core_total * perc / 100. / self.stocks_owned[st]['price'], 0)
             if np.abs(perc) >= self.tolerance:
                 priority = 1
@@ -107,9 +121,9 @@ class Portfolio(object):
                     return_string = ' '.join([return_string, "Buy:",  str(int(np.abs(shares))), str(st), str(asset), str(round(perc,1)), '\n'])
             else:
                 return_string = ' '.join([return_string, "W/in tol:", ])
-                if shares > 0:
+                if shares > 0.0:
                     return_string = ' '.join([return_string,  "Sell",  str(int(np.abs(shares))), str(st), str(asset), str(round(perc,1)), '\n'])
-                if shares < 0:
+                else:
                     return_string = ' '.join([return_string, "Buy",  str(int(np.abs(shares))), str(st), str(asset), str(round(perc,1)), '\n'])
         return return_string, priority
     
@@ -131,5 +145,4 @@ class Portfolio(object):
         for stock in self.stocks_owned:
             print stock, locale.currency(self.stocks_owned[stock]['price'] * self.stocks_owned[stock]['shares'], grouping=True)
         pass
-        
 
