@@ -1,8 +1,11 @@
-import pandas as pd
+#!/usr/bin/env python
+
+# import pandas as pd
 import numpy as np
 from pandas.io.data import get_quote_yahoo
 import locale
-locale.setlocale( locale.LC_ALL, '' )
+locale.setlocale(locale.LC_ALL, '')
+
 
 class Portfolio(object):
     def __init__(self):
@@ -14,26 +17,26 @@ class Portfolio(object):
         self.current_asset_percentages = []
         self.core_total = 0.0
         self.total = 0.0
-        self.tolerance = 3.5 # percentage off ideal before recommended action
+        self.tolerance = 3.5  # percentage off ideal before recommended action
         pass
     
     def get_ideal_allocation(self, infile):
-        """Reads in file of ideal portfolio allocation. 
-           Use 1-word (no spaces) for asset class. 
+        """Reads in file of ideal portfolio allocation.
+           Use 1-word (no spaces) for asset class.
            "tolerance" is a special word which gives the tolerance level
             before a rebalance is recommended."""
-        with open(infile, 'r') as fh: 
-            for line in fh:
+        with open(infile, 'r') as file_handle:
+            for line in file_handle:
                 if line.split()[0] == "tolerance":
                     self.tolerance = float(line.split()[1])
                 else:
                     self.ideal_allocation[line.split()[0]] = float(line.split()[1])
                     self.class_total[line.split()[0]] = 0.0
-    
+
     def get_account_details(self, infiles):
         for infile in infiles:
-            with open(infile, 'r') as fh:
-                for line in fh:
+            with open(infile, 'r') as file_handle:
+                for line in file_handle:
                     name = line.split()[0]
                     if name == 'CASH':
                         self.cash += float(line.split()[1].strip("$"))
@@ -46,7 +49,7 @@ class Portfolio(object):
                         else:
                             self.stocks_owned[name]['shares'] += float(line.split()[1])
                             self.stocks_owned[name]['assetClass'] = line.split()[2]
-                            
+
     def parse_account_details(self, webdict):
         for name in webdict:
             if name == 'CASH':
@@ -60,12 +63,12 @@ class Portfolio(object):
                 else:
                     self.stocks_owned[name]['shares'] += webdict[name]['shares']
                     self.stocks_owned[name]['assetClass'] = webdict[name]['assetClass']
-                            
+
     def get_stock_prices(self):
         dataframe = get_quote_yahoo([stock for stock in self.stocks_owned])
         for stock in self.stocks_owned:
             self.stocks_owned[stock]['price'] = dataframe.ix[stock]['last']
-    
+
     def get_core_total(self):
         self.core_total = 0.0
         self.total = 0.0
@@ -80,14 +83,15 @@ class Portfolio(object):
             else:
                 self.total += temp_amount
         pass
-    
+
     def get_current_allocation(self):
         """Remember same stock can't have two assetClasses."""
         for stock in self.stocks_owned:
             if self.stocks_owned[stock]['assetClass'] in self.ideal_allocation:
                 temp_asset = self.stocks_owned[stock]['assetClass']
-                self.current_asset_percentages.append((stock, self.class_total[temp_asset] / self.core_total * 100. - self.ideal_allocation[temp_asset], temp_asset))
-    
+                self.current_asset_percentages.append((stock, self.class_total[temp_asset] / self.core_total * 100. - self.ideal_allocation[temp_asset],
+                                                       temp_asset))
+
     def get_recommendations(self):
         """Print recommendations."""
         print "Recommended actions:"
@@ -95,17 +99,17 @@ class Portfolio(object):
             shares = round(self.core_total * perc / 100. / self.stocks_owned[st]['price'], 0)
             if np.abs(perc) >= self.tolerance:
                 if shares > 0:
-                    print "Sell:", int(np.abs(shares)), st, asset, round(perc,1)
+                    print "Sell:", int(np.abs(shares)), st, asset, round(perc, 1)
                 if shares < 0:
-                    print "Buy:", int(np.abs(shares)), st, asset, round(perc,1)
+                    print "Buy:", int(np.abs(shares)), st, asset, round(perc, 1)
             else:
-                print "W/in tol:", 
+                print "W/in tol:",
                 if shares > 0.0:
-                    print "Sell", int(np.abs(shares)), st, asset, round(perc,1)
+                    print "Sell", int(np.abs(shares)), st, asset, round(perc, 1)
                 else:
-                    print "Buy", int(np.abs(shares)), st, asset, round(perc,1)
+                    print "Buy", int(np.abs(shares)), st, asset, round(perc, 1)
         pass
-        
+
     def push_recommendations(self):
         """Pushover recommendations."""
         priority = 0
@@ -116,17 +120,39 @@ class Portfolio(object):
             if np.abs(perc) >= self.tolerance:
                 priority = 1
                 if shares > 0:
-                    return_string = ' '.join([return_string, "Sell:", str(int(np.abs(shares))), str(st), str(asset), str(round(perc,1)), '\n'])
+                    return_string = ' '.join([return_string,
+                                              "Sell:",
+                                              str(int(np.abs(shares))),
+                                              str(st), str(asset),
+                                              str(round(perc, 1)),
+                                              '\n'])
                 if shares < 0:
-                    return_string = ' '.join([return_string, "Buy:",  str(int(np.abs(shares))), str(st), str(asset), str(round(perc,1)), '\n'])
+                    return_string = ' '.join([return_string,
+                                              "Buy:",
+                                              str(int(np.abs(shares))),
+                                              str(st),
+                                              str(asset),
+                                              str(round(perc, 1)),
+                                              '\n'])
             else:
                 return_string = ' '.join([return_string, "W/in tol:", ])
                 if shares > 0.0:
-                    return_string = ' '.join([return_string,  "Sell",  str(int(np.abs(shares))), str(st), str(asset), str(round(perc,1)), '\n'])
+                    return_string = ' '.join([return_string,
+                                              "Sell",
+                                              str(int(np.abs(shares))),
+                                              str(st),
+                                              str(asset),
+                                              str(round(perc, 1)),
+                                              '\n'])
                 else:
-                    return_string = ' '.join([return_string, "Buy",  str(int(np.abs(shares))), str(st), str(asset), str(round(perc,1)), '\n'])
+                    return_string = ' '.join([return_string,
+                                              "Buy",
+                                              str(int(np.abs(shares))),
+                                              str(st),
+                                              str(asset),str(round(perc, 1)),
+                                              '\n'])
         return return_string, priority
-    
+
     def get_summary(self):
         print "Cash:", locale.currency(self.cash, grouping=True)
         print "Core Total:", locale.currency(self.core_total, grouping=True)
@@ -136,13 +162,22 @@ class Portfolio(object):
     def push_summary(self):
         """Pushover summary."""
         return_string = ""
-        return_string = ''.join([return_string, "Cash: ", locale.currency(self.cash, grouping=True), "\n"])
-        return_string = ''.join([return_string, "Core Total: ", locale.currency(self.core_total, grouping=True), "\n"])
-        return_string = ''.join([return_string, "Total: ", locale.currency(self.total, grouping=True), "\n"])
+        return_string = ''.join([return_string,
+                                 "Cash:",
+                                 locale.currency(self.cash, grouping=True),
+                                 "\n"])
+        return_string = ''.join([return_string,
+                                 "Core Total:",
+                                 locale.currency(self.core_total, grouping=True),
+                                 "\n"])
+        return_string = ''.join([return_string,
+                                 "Total:",
+                                 locale.currency(self.total, grouping=True),
+                                 "\n"])
         return return_string
-    
+
     def detailed_summary(self):
         for stock in self.stocks_owned:
-            print stock, locale.currency(self.stocks_owned[stock]['price'] * self.stocks_owned[stock]['shares'], grouping=True)
+            print stock, locale.currency(self.stocks_owned[stock]['price'] * self.stocks_owned[stock]['shares'], 
+                                         grouping=True)
         pass
-

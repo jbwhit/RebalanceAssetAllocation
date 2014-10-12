@@ -2,7 +2,7 @@ from distutils.core import setup
 
 
 setup(name="RebalanceAssetAllocation",
-      version='0.0.1',
+      version='0.0.2',
       description="Calculate investment portfolio compared to an ideal balance.",
       py_modules=['RebalanceAssetAllocation'],
       author='Jonathan Whitmore',
