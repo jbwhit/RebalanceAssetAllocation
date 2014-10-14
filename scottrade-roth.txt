@@ -1,9 +1,0 @@
-CASH    722.87
-AAPL    11	individual
-EFA	    25	Foreign
-GOOG	5	individual
-III	    100	individual
-RWR	    115	RealEstate  
-SHY	    35	BndsShrt    
-TIP	    35	USTIPS      
-TLT	    38	BndsLng     

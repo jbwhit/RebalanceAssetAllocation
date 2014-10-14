@@ -178,15 +178,15 @@ class Portfolio(object):
     def push_summary(self):
         """Pushover summary."""
         return_string = ""
-        return_string = ''.join([return_string,
+        return_string = ' '.join([return_string,
                                  "Cash:",
                                  locale.currency(self.cash, grouping=True),
                                  "\n"])
-        return_string = ''.join([return_string,
+        return_string = ' '.join([return_string,
                                  "Core Total:",
                                  locale.currency(self.core_total, grouping=True),
                                  "\n"])
-        return_string = ''.join([return_string,
+        return_string = ' '.join([return_string,
                                  "Total:",
                                  locale.currency(self.total, grouping=True),
                                  "\n"])

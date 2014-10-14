@@ -1,0 +1,125 @@
+#!/usr/bin/env python
+
+"""
+If you have a https://pushover.net/ account (and free app on your smartphone)
+grab your USERKEY and replace the relevant part in the command below:
+
+Example Usage for Push Notification with Scottrade Accounts:
+
+./example-notification --APP_TOKEN MExxfVDcD8DFeTv8kjvM9MZoLEaXNn \
+                        --USER_KEY USERKEY --output_option push \
+                        --message_option full_recommendations
+
+This assumes that:
+ - you have put your scottrade credentials in config.json
+ - you have assigned your assetclass labels in assetclass.json
+ - you have defined your ideal-allocation in ideal-allocation.json
+
+"""
+
+from bs4 import BeautifulSoup
+from selenium import webdriver
+# from selenium.webdriver.common.keys import Keys
+# import cookielib
+import json
+import string
+import time
+import unidecode
+
+import argparse
+import httplib
+import urllib
+# import RebalanceAssetAllocation
+from RebalanceAssetAllocation import Portfolio
+import locale
+locale.setlocale(locale.LC_ALL, '')
+
+priority = 0
+
+parser = argparse.ArgumentParser(description='Read commandline input.')
+parser.add_argument('--USER_KEY', action='store', type=str, help="Pushover USER_KEY https://pushover.net/")
+parser.add_argument('--APP_TOKEN', action='store', type=str, help="Pushover APP_TOKEN https://pushover.net/")
+parser.add_argument('--output_option', action='store', type=str, help="None.", default="print")
+parser.add_argument('--message_option', action='store', type=str, help="None.", default="recommend")
+
+args = parser.parse_args()
+
+USER_KEY = args.USER_KEY
+APP_TOKEN = args.APP_TOKEN
+
+with open("config.json", 'r') as file_handle:
+    credentials = json.load(file_handle)
+
+with open("assetclass.json", 'r') as file_handle:
+    codes = json.load(file_handle)
+
+records = {}
+for credential in credentials:
+    time.sleep(5)
+    driver = webdriver.Chrome('/usr/bin/chromedriver')
+    driver.get(credential['url'])
+    elem = driver.find_element_by_id("ctl00_body_Login1_txtAccountNumber")
+    elem.send_keys(credential['username'])
+    elem = driver.find_element_by_id("ctl00_body_Login1_txtPassword")
+    elem.send_keys(credential['passwd'])
+    elem = driver.find_element_by_id("ctl00_body_sibLogOn")
+    elem.click()
+    content = driver.page_source
+    soup = BeautifulSoup(content)
+    driver.close()
+    tabulka = soup.find("table", {"class": "hpc-table w-Positions"})
+
+    rows = tabulka.findAll('tr')
+    for tr in rows[1:]:
+        cols = tr.findAll('td')
+        symbol, qty, last, pchg, value, dchg = [c.text for c in cols]
+        qty = float(qty)
+        last = float(last)
+        value = float("".join([number for number in unidecode.unidecode(value)
+                               if number in string.digits or number in "."]))
+        if symbol not in records:
+            records[symbol] = {}
+            records[symbol]['shares'] = qty
+            records[symbol]['assetClass'] = codes[symbol]
+        else:
+            records[symbol]['shares'] += qty
+
+    tabtop = soup.find("table", {"class": "hpc-table hpc-balances"})
+    row = tabtop.find('tr')
+    cash = float("".join([number for number in unidecode.unidecode(row.findAll('td')[1].text)
+                          if number in string.digits or number in "."]))
+
+    if "CASH" not in records:
+        records["CASH"] = cash
+    else:
+        records["CASH"] += cash
+
+my_portfolio = Portfolio()
+my_portfolio.parse_account_details(records)
+my_portfolio.parse_ideal_allocation("ideal-allocation.json")
+my_portfolio.get_stock_prices()
+my_portfolio.get_core_total()
+my_portfolio.get_current_allocation()
+
+if args.output_option == "push":
+    if args.message_option == 'recommend':
+        example_output, priority = my_portfolio.push_recommendations()
+    if args.message_option == 'summary':
+        example_output = my_portfolio.push_summary()
+    if args.message_option == 'full_recommendations':
+        example_output, priority = my_portfolio.push_full_recommendations()
+    conn = httplib.HTTPSConnection("api.pushover.net:443")
+    conn.request("POST", "/1/messages.json",
+                 urllib.urlencode({
+                     "token": APP_TOKEN,
+                     "user": USER_KEY,
+                     "message": example_output,
+                     "priority": priority,
+                 }), {"Content-type": "application/x-www-form-urlencoded"})
+    conn.getresponse()
+
+elif args.output_option == "print":
+    if args.message_option == 'recommend':
+        example_output = my_portfolio.get_recommendations()
+    if args.message_option == 'summary':
+        example_output = my_portfolio.get_summary()
