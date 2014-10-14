@@ -1,0 +1,12 @@
+{
+    "AAPL": "individual", 
+    "EEM": "Emerging", 
+    "EFA": "Foreign", 
+    "GOOG": "individual", 
+    "GOOGL": "individual", 
+    "IVV": "Domestic", 
+    "RWR": "RealEstate", 
+    "SHY": "BndsShrt", 
+    "TIP": "USTIPS", 
+    "TLT": "BndsLng"
+}
