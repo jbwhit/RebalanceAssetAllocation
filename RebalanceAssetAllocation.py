@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# import pandas as pd
 import numpy as np
 from pandas.io.data import get_quote_yahoo
+import json
 import locale
 locale.setlocale(locale.LC_ALL, '')
 
@@ -19,7 +19,7 @@ class Portfolio(object):
         self.total = 0.0
         self.tolerance = 3.5  # percentage off ideal before recommended action
         pass
-    
+
     def get_ideal_allocation(self, infile):
         """Reads in file of ideal portfolio allocation.
            Use 1-word (no spaces) for asset class.
@@ -32,6 +32,20 @@ class Portfolio(object):
                 else:
                     self.ideal_allocation[line.split()[0]] = float(line.split()[1])
                     self.class_total[line.split()[0]] = 0.0
+
+    def parse_ideal_allocation(self, infile):
+        """Reads in json formatted file of the ideal portfolio
+            allocation."""
+        with open(infile, 'r') as file_handle:
+            allocation_dict = json.load(file_handle)
+
+        for key in allocation_dict:
+            if key == "tolerance":
+                self.tolerance = allocation_dict[key]
+            else:
+                self.ideal_allocation[key] = float(allocation_dict[key])
+                self.class_total[key] = 0.0
+        pass
 
     def get_account_details(self, infiles):
         for infile in infiles:
@@ -89,8 +103,10 @@ class Portfolio(object):
         for stock in self.stocks_owned:
             if self.stocks_owned[stock]['assetClass'] in self.ideal_allocation:
                 temp_asset = self.stocks_owned[stock]['assetClass']
-                self.current_asset_percentages.append((stock, self.class_total[temp_asset] / self.core_total * 100. - self.ideal_allocation[temp_asset],
-                                                       temp_asset))
+                self.current_asset_percentages.append(
+                    (stock,
+                        self.class_total[temp_asset] / self.core_total * 100. - self.ideal_allocation[temp_asset],
+                        temp_asset))
 
     def get_recommendations(self):
         """Print recommendations."""
@@ -110,10 +126,9 @@ class Portfolio(object):
                     print "Buy", int(np.abs(shares)), st, asset, round(perc, 1)
         pass
 
-    def push_recommendations(self):
+    def push_recommendations(self, return_string=""):
         """Pushover recommendations."""
         priority = 0
-        return_string = ""
         return_string = '\n'.join([return_string, "Recommended actions:", '\n'])
         for st, perc, asset in sorted(self.current_asset_percentages, key=lambda x: x[1], reverse=True):
             shares = round(self.core_total * perc / 100. / self.stocks_owned[st]['price'], 0)
@@ -149,7 +164,8 @@ class Portfolio(object):
                                               "Buy",
                                               str(int(np.abs(shares))),
                                               str(st),
-                                              str(asset),str(round(perc, 1)),
+                                              str(asset),
+                                              str(round(perc, 1)),
                                               '\n'])
         return return_string, priority
 
@@ -176,8 +192,13 @@ class Portfolio(object):
                                  "\n"])
         return return_string
 
+    def push_full_recommendations(self):
+        """Both overall summary and recommendations."""
+        summary = self.push_summary()
+        return self.push_recommendations(summary)
+
     def detailed_summary(self):
         for stock in self.stocks_owned:
-            print stock, locale.currency(self.stocks_owned[stock]['price'] * self.stocks_owned[stock]['shares'], 
+            print stock, locale.currency(self.stocks_owned[stock]['price'] * self.stocks_owned[stock]['shares'],
                                          grouping=True)
         pass
