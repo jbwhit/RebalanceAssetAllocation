@@ -19,8 +19,6 @@ This assumes that:
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
-# from selenium.webdriver.common.keys import Keys
-# import cookielib
 import json
 import string
 import time
@@ -29,7 +27,6 @@ import unidecode
 import argparse
 import httplib
 import urllib
-# import RebalanceAssetAllocation
 from RebalanceAssetAllocation import Portfolio
 import locale
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
