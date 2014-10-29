@@ -59,10 +59,10 @@ class Portfolio(object):
                             self.stocks_owned[name] = {}
                             self.stocks_owned[name]['shares'] = 0.0
                             self.stocks_owned[name]['shares'] += float(line.split()[1])
-                            self.stocks_owned[name]['assetClass'] = line.split()[2]
+                            self.stocks_owned[name]['asset_class'] = line.split()[2]
                         else:
                             self.stocks_owned[name]['shares'] += float(line.split()[1])
-                            self.stocks_owned[name]['assetClass'] = line.split()[2]
+                            self.stocks_owned[name]['asset_class'] = line.split()[2]
 
     def parse_account_details(self, webdict):
         for name in webdict:
@@ -73,10 +73,10 @@ class Portfolio(object):
                     self.stocks_owned[name] = {}
                     self.stocks_owned[name]['shares'] = 0.0
                     self.stocks_owned[name]['shares'] += webdict[name]['shares']
-                    self.stocks_owned[name]['assetClass'] = webdict[name]['assetClass']
+                    self.stocks_owned[name]['asset_class'] = webdict[name]['asset_class']
                 else:
                     self.stocks_owned[name]['shares'] += webdict[name]['shares']
-                    self.stocks_owned[name]['assetClass'] = webdict[name]['assetClass']
+                    self.stocks_owned[name]['asset_class'] = webdict[name]['asset_class']
 
     def get_stock_prices(self):
         dataframe = get_quote_yahoo([stock for stock in self.stocks_owned])
@@ -90,19 +90,19 @@ class Portfolio(object):
         self.total += self.cash
         for stock in self.stocks_owned:
             temp_amount = self.stocks_owned[stock]['price'] * self.stocks_owned[stock]['shares']
-            if self.stocks_owned[stock]['assetClass'] in self.ideal_allocation:
+            if self.stocks_owned[stock]['asset_class'] in self.ideal_allocation:
                 self.core_total += temp_amount
-                self.class_total[self.stocks_owned[stock]['assetClass']] += temp_amount
+                self.class_total[self.stocks_owned[stock]['asset_class']] += temp_amount
                 self.total += temp_amount
             else:
                 self.total += temp_amount
         pass
 
     def get_current_allocation(self):
-        """Remember same stock can't have two assetClasses."""
+        """Remember same stock can't have two asset_classes."""
         for stock in self.stocks_owned:
-            if self.stocks_owned[stock]['assetClass'] in self.ideal_allocation:
-                temp_asset = self.stocks_owned[stock]['assetClass']
+            if self.stocks_owned[stock]['asset_class'] in self.ideal_allocation:
+                temp_asset = self.stocks_owned[stock]['asset_class']
                 self.current_asset_percentages.append(
                     (stock,
                         self.class_total[temp_asset] / self.core_total * 100. - self.ideal_allocation[temp_asset],
