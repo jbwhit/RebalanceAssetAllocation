@@ -82,7 +82,7 @@ for credential in credentials:
             records[symbol]['shares'] += qty
 
     tabtop = soup.find("table", {"class": "hpc-table hpc-balances"})
-    row = tabtop.find('tr')
+    row = tabtop.findAll('tr')[1]
     cash = float("".join([number for number in unidecode.unidecode(row.findAll('td')[1].text)
                           if number in string.digits or number in "."]))
 
